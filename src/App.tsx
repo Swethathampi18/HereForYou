@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AnimatePresence } from "framer-motion";
+import { AuthProvider } from "@/hooks/useAuth";
 import Landing from "./pages/Landing";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
@@ -25,22 +26,24 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AnimatePresence mode="wait">
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/intake" element={<IntakeChat />} />
-            <Route path="/results" element={<IntakeResults />} />
-            <Route path="/match" element={<MatchPage />} />
-            <Route path="/progress" element={<ProgressPage />} />
-            <Route path="/therapist" element={<TherapistDashboard />} />
-            <Route path="/supervisor" element={<SupervisorPanel />} />
-            <Route path="/guardian" element={<GuardianPortal />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AnimatePresence>
+        <AuthProvider>
+          <AnimatePresence mode="wait">
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route path="/signin" element={<SignIn />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/intake" element={<IntakeChat />} />
+              <Route path="/results" element={<IntakeResults />} />
+              <Route path="/match" element={<MatchPage />} />
+              <Route path="/progress" element={<ProgressPage />} />
+              <Route path="/therapist" element={<TherapistDashboard />} />
+              <Route path="/supervisor" element={<SupervisorPanel />} />
+              <Route path="/guardian" element={<GuardianPortal />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AnimatePresence>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
