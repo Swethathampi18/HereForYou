@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "@/hooks/useAuth";
 import { RoleGuard } from "@/components/RoleGuard";
+import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { TherapistSidebar } from "@/pages/TherapistDashboard";
 import Landing from "./pages/Landing";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
@@ -28,25 +30,12 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const SettingsWithSidebar = ({ role }: { role: string }) => {
-  // Dynamic import sidebar based on role
-  if (role === "therapist") {
-    const { TherapistSidebar } = require("./pages/TherapistDashboard");
-    return <div className="flex min-h-screen bg-background"><TherapistSidebar /><main className="flex-1"><SettingsPage /></main></div>;
-  }
-  const { DashboardSidebar } = require("./components/DashboardSidebar");
-  return <div className="flex min-h-screen bg-background"><DashboardSidebar /><main className="flex-1"><SettingsPage /></main></div>;
-};
-
-const PatientSettings = () => {
-  const { DashboardSidebar } = require("./components/DashboardSidebar");
-  return <div className="flex min-h-screen bg-background"><DashboardSidebar /><main className="flex-1"><SettingsPage /></main></div>;
-};
-
-const TherapistSettings = () => {
-  const { TherapistSidebar } = require("./pages/TherapistDashboard");
-  return <div className="flex min-h-screen bg-background"><TherapistSidebar /><main className="flex-1"><SettingsPage /></main></div>;
-};
+const PatientSettings = () => (
+  <div className="flex min-h-screen bg-background"><DashboardSidebar /><main className="flex-1"><SettingsPage /></main></div>
+);
+const TherapistSettingsPage = () => (
+  <div className="flex min-h-screen bg-background"><TherapistSidebar /><main className="flex-1"><SettingsPage /></main></div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -60,11 +49,8 @@ const App = () => (
               <Route path="/" element={<Landing />} />
               <Route path="/signup" element={<SignUp />} />
               <Route path="/signin" element={<SignIn />} />
-
-              {/* Legacy redirect */}
               <Route path="/dashboard" element={<Navigate to="/dashboard/patient" replace />} />
 
-              {/* Patient routes */}
               <Route path="/dashboard/patient" element={<RoleGuard allowedRoles={["patient"]}><Dashboard /></RoleGuard>} />
               <Route path="/dashboard/patient/settings" element={<RoleGuard allowedRoles={["patient"]}><PatientSettings /></RoleGuard>} />
               <Route path="/intake" element={<RoleGuard allowedRoles={["patient", "guardian"]}><IntakeChat /></RoleGuard>} />
@@ -73,27 +59,21 @@ const App = () => (
               <Route path="/progress" element={<RoleGuard allowedRoles={["patient"]}><ProgressPage /></RoleGuard>} />
               <Route path="/therapist-profile/:id" element={<RoleGuard allowedRoles={["patient"]}><TherapistProfile /></RoleGuard>} />
 
-              {/* Therapist routes */}
               <Route path="/dashboard/therapist" element={<RoleGuard allowedRoles={["therapist"]}><TherapistDashboard /></RoleGuard>} />
               <Route path="/dashboard/therapist/patients" element={<RoleGuard allowedRoles={["therapist"]}><TherapistPatients /></RoleGuard>} />
               <Route path="/dashboard/therapist/groups" element={<RoleGuard allowedRoles={["therapist"]}><TherapistGroups /></RoleGuard>} />
               <Route path="/dashboard/therapist/schedule" element={<RoleGuard allowedRoles={["therapist"]}><TherapistSchedule /></RoleGuard>} />
               <Route path="/dashboard/therapist/notes" element={<RoleGuard allowedRoles={["therapist"]}><TherapistNotes /></RoleGuard>} />
               <Route path="/dashboard/therapist/referrals" element={<RoleGuard allowedRoles={["therapist"]}><TherapistReferrals /></RoleGuard>} />
-              <Route path="/dashboard/therapist/settings" element={<RoleGuard allowedRoles={["therapist"]}><TherapistSettings /></RoleGuard>} />
+              <Route path="/dashboard/therapist/settings" element={<RoleGuard allowedRoles={["therapist"]}><TherapistSettingsPage /></RoleGuard>} />
 
-              {/* Guardian routes */}
               <Route path="/dashboard/guardian" element={<RoleGuard allowedRoles={["guardian"]}><GuardianPortal /></RoleGuard>} />
               <Route path="/dashboard/guardian/settings" element={<RoleGuard allowedRoles={["guardian"]}><GuardianPortal /></RoleGuard>} />
-
-              {/* Supervisor/Admin */}
               <Route path="/dashboard/supervisor" element={<RoleGuard allowedRoles={["supervisor"]}><SupervisorPanel /></RoleGuard>} />
-              <Route path="/dashboard/supervisor/settings" element={<RoleGuard allowedRoles={["supervisor"]}><SupervisorPanel /></RoleGuard>} />
               <Route path="/dashboard/admin" element={<RoleGuard allowedRoles={["admin"]}><SupervisorPanel /></RoleGuard>} />
               <Route path="/supervisor" element={<RoleGuard allowedRoles={["supervisor", "admin"]}><SupervisorPanel /></RoleGuard>} />
               <Route path="/supervisor/*" element={<RoleGuard allowedRoles={["supervisor", "admin"]}><SupervisorPanel /></RoleGuard>} />
 
-              {/* Legacy therapist routes redirect */}
               <Route path="/therapist/notes" element={<Navigate to="/dashboard/therapist/notes" replace />} />
               <Route path="/therapist/claims" element={<Navigate to="/dashboard/therapist" replace />} />
               <Route path="/therapist/settings" element={<Navigate to="/dashboard/therapist/settings" replace />} />
