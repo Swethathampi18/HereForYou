@@ -1,6 +1,7 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Heart, Home, MessageCircle, Users, TrendingUp, Smile, Settings, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 const patientNav = [
   { label: "Home", icon: Home, to: "/dashboard" },
@@ -13,6 +14,13 @@ const patientNav = [
 
 export const DashboardSidebar = () => {
   const { pathname } = useLocation();
+  const { profile, role, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <aside className="hidden md:flex flex-col w-60 bg-card border-r min-h-screen sticky top-0">
@@ -44,14 +52,14 @@ export const DashboardSidebar = () => {
       <div className="p-4 border-t">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
-            A
+            {profile?.full_name?.[0]?.toUpperCase() || "U"}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">Alex Patient</p>
-            <p className="text-xs text-muted-foreground">Patient</p>
+            <p className="text-sm font-medium text-foreground truncate">{profile?.full_name || "User"}</p>
+            <p className="text-xs text-muted-foreground capitalize">{role || "Patient"}</p>
           </div>
         </div>
-        <button className="flex items-center gap-2 mt-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <button onClick={handleSignOut} className="flex items-center gap-2 mt-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <LogOut className="h-3.5 w-3.5" />
           Sign Out
         </button>
