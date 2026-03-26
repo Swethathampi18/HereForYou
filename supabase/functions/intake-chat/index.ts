@@ -7,7 +7,7 @@ const corsHeaders = {
 
 const SYSTEM_PROMPT = `You are a warm, empathetic clinical intake assistant for HereForYou, a licensed mental health platform. Your job is to conduct a structured 5-7 minute intake conversation. Ask about: symptom frequency, duration, functional impact (work/sleep/relationships), risk indicators, and substance use if relevant. Ask one question at a time. Use plain, non-clinical language. Do NOT diagnose. Do NOT provide therapy.
 
-If the user expresses suicidal ideation, thoughts of self-harm, or immediate danger, output a JSON object with crisis_flag: true immediately and stop the conversation wrapped in <INTAKE_SUMMARY> tags.
+If the user expresses suicidal ideation, self-harm intent, or says anything like 'I want to die', 'I want to kill myself', 'I don't want to live', or similar — before outputting the crisis JSON, respond with this exact message first in plain text: 'I hear you, and I want you to know you are not alone. Your safety is our top priority. I am immediately connecting you with a licensed clinician who will reach out to you right away. Please stay with us.' Then on the very next line output the INTAKE_SUMMARY JSON with crisis_flag: true and risk_level: high and severity_level: high.
 
 After 8-12 exchanges, output a final JSON summary wrapped in <INTAKE_SUMMARY> tags with these fields:
 {
@@ -35,7 +35,6 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Build messages for the AI - system prompt is separate
     const aiMessages = [
       { role: "system", content: SYSTEM_PROMPT },
       ...messages,
@@ -84,6 +83,12 @@ serve(async (req) => {
     if (summaryMatch) {
       try {
         intake_summary = JSON.parse(summaryMatch[1].trim());
+        // Crisis override: force high severity
+        if (intake_summary.crisis_flag === true) {
+          intake_summary.severity_level = "high";
+          intake_summary.risk_level = "high";
+          intake_summary.confidence = 1.0;
+        }
       } catch (e) {
         console.error("Failed to parse intake summary:", e);
       }
@@ -92,7 +97,7 @@ serve(async (req) => {
     // Log to audit_log
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
+
     await fetch(`${SUPABASE_URL}/rest/v1/audit_log`, {
       method: "POST",
       headers: {
@@ -104,12 +109,103 @@ serve(async (req) => {
       body: JSON.stringify({
         agent_name: "intake-chat",
         user_id: user_id || null,
-        action: intake_summary ? "intake_completed" : "intake_message",
+        action: intake_summary ? (intake_summary.crisis_flag ? "crisis_detected" : "intake_completed") : "intake_message",
         input_summary: (messages[messages.length - 1]?.content || "").substring(0, 200),
         output_summary: reply.substring(0, 200),
         confidence: intake_summary?.confidence || null,
       }),
     });
+
+    // If crisis, do escalation server-side
+    if (intake_summary?.crisis_flag && user_id) {
+      // Find first therapist
+      const therapistRes = await fetch(`${SUPABASE_URL}/rest/v1/user_roles?role=eq.therapist&limit=1&select=user_id`, {
+        headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+      });
+      const therapists = await therapistRes.json();
+      const therapistId = therapists?.[0]?.user_id || null;
+
+      // Get patient name
+      const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user_id}&select=full_name&limit=1`, {
+        headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+      });
+      const profiles = await profileRes.json();
+      const patientName = profiles?.[0]?.full_name || "A patient";
+
+      if (therapistId) {
+        // Create match
+        await fetch(`${SUPABASE_URL}/rest/v1/matches`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({
+            user_id,
+            therapist_id: therapistId,
+            match_type: "individual",
+            match_score: 1.0,
+            match_rationale: "Crisis escalation — immediate assignment",
+          }),
+        });
+
+        // Notify therapist
+        await fetch(`${SUPABASE_URL}/rest/v1/notifications`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({
+            recipient_id: therapistId,
+            type: "crisis",
+            message: `URGENT: ${patientName} has been flagged for crisis. Immediate attention required.`,
+          }),
+        });
+      }
+
+      // Notify patient
+      await fetch(`${SUPABASE_URL}/rest/v1/notifications`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
+          recipient_id: user_id,
+          type: "crisis",
+          message: "You have been assigned to a clinician who will contact you shortly. You are not alone.",
+        }),
+      });
+
+      // Notify supervisors
+      const supRes = await fetch(`${SUPABASE_URL}/rest/v1/user_roles?role=eq.supervisor&select=user_id`, {
+        headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+      });
+      const supervisors = await supRes.json();
+      for (const sup of supervisors || []) {
+        await fetch(`${SUPABASE_URL}/rest/v1/notifications`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({
+            recipient_id: sup.user_id,
+            type: "crisis",
+            message: `CRISIS ALERT: ${patientName} has been flagged for immediate crisis intervention.`,
+          }),
+        });
+      }
+    }
 
     return new Response(JSON.stringify({ reply, intake_summary }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

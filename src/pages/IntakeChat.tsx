@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { CrisisOverlay } from "@/components/CrisisOverlay";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -15,17 +16,16 @@ const IntakeChat = () => {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showCrisis, setShowCrisis] = useState(false);
   const { user, session } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
   const sessionIdRef = useRef<string | null>(null);
 
-  // Calculate progress step from message count
   const msgCount = messages.length;
   const step = msgCount <= 2 ? 1 : msgCount <= 4 ? 2 : msgCount <= 6 ? 3 : msgCount <= 8 ? 4 : 5;
 
-  // Create intake session on mount
   useEffect(() => {
     const createSession = async () => {
       if (!user) return;
@@ -39,12 +39,10 @@ const IntakeChat = () => {
     createSession();
   }, [user]);
 
-  // Auto-scroll
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  // Send first AI message on mount
   useEffect(() => {
     if (messages.length === 0) {
       setLoading(true);
@@ -60,22 +58,24 @@ const IntakeChat = () => {
       });
 
       if (error) throw error;
-
       if (data.error) {
         toast({ title: data.error, variant: "destructive" });
         return;
       }
 
       const reply = data.reply as string;
-      // Strip <INTAKE_SUMMARY> tags from displayed text
       const displayReply = reply.replace(/<INTAKE_SUMMARY>[\s\S]*?<\/INTAKE_SUMMARY>/g, "").trim();
 
       const newMessages: Msg[] = [...currentMessages, { role: "assistant", content: displayReply }];
       setMessages(newMessages);
 
-      // Check for intake summary
       if (data.intake_summary) {
         await saveIntakeSummary(data.intake_summary, currentMessages);
+        
+        if (data.intake_summary.crisis_flag) {
+          // Show crisis overlay after 1.5s delay so user sees the message first
+          setTimeout(() => setShowCrisis(true), 1500);
+        }
       }
     } catch (err: any) {
       toast({ title: err.message || "Failed to get AI response", variant: "destructive" });
@@ -111,8 +111,15 @@ const IntakeChat = () => {
         });
       }
 
-      toast({ title: "Assessment complete!" });
-      setTimeout(() => navigate("/results"), 1000);
+      // Generate report
+      supabase.functions.invoke("generate-report", {
+        body: { intake_session_id: sessionIdRef.current, user_id: user.id },
+      });
+
+      if (!summary.crisis_flag) {
+        toast({ title: "Assessment complete!" });
+        setTimeout(() => navigate("/results"), 1000);
+      }
     } catch (err: any) {
       toast({ title: "Error saving assessment", variant: "destructive" });
     }
@@ -132,7 +139,7 @@ const IntakeChat = () => {
   return (
     <PageTransition>
       <div className="flex flex-col h-screen bg-background">
-        {/* Top bar */}
+        {showCrisis && <CrisisOverlay />}
         <div className="border-b bg-card px-4 py-3 flex items-center gap-4">
           <Link to="/dashboard/patient" className="text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-5 w-5" />
@@ -143,10 +150,7 @@ const IntakeChat = () => {
           </div>
           <div className="flex-1 mx-8">
             <div className="h-2 bg-muted rounded-full max-w-xs mx-auto">
-              <div
-                className="h-2 bg-primary rounded-full transition-all duration-500"
-                style={{ width: `${(step / 5) * 100}%` }}
-              />
+              <div className="h-2 bg-primary rounded-full transition-all duration-500" style={{ width: `${(step / 5) * 100}%` }} />
             </div>
           </div>
           <Button variant="ghost" size="sm" asChild>
@@ -154,43 +158,21 @@ const IntakeChat = () => {
           </Button>
         </div>
 
-        {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
           <div className="max-w-[680px] mx-auto space-y-4">
             {messages.map((msg, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05, duration: 0.2 }}
-                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-              >
+              <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, duration: 0.2 }} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 {msg.role === "assistant" && (
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold mr-3 flex-shrink-0 mt-1">
-                    H
-                  </div>
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold mr-3 flex-shrink-0 mt-1">H</div>
                 )}
-                <div
-                  className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-br-md"
-                      : "bg-card border shadow-sm rounded-bl-md"
-                  }`}
-                >
+                <div className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${msg.role === "user" ? "bg-primary text-primary-foreground rounded-br-md" : "bg-card border shadow-sm rounded-bl-md"}`}>
                   {msg.content}
                 </div>
               </motion.div>
             ))}
-            {/* Typing indicator */}
             {loading && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex justify-start"
-              >
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold mr-3 flex-shrink-0 mt-1">
-                  H
-                </div>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold mr-3 flex-shrink-0 mt-1">H</div>
                 <div className="bg-card border shadow-sm rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce [animation-delay:0ms]" />
                   <span className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce [animation-delay:150ms]" />
@@ -201,18 +183,10 @@ const IntakeChat = () => {
           </div>
         </div>
 
-        {/* Input */}
         <div className="border-t bg-card px-4 py-3">
           <p className="text-center text-xs text-muted-foreground mb-2">This conversation is private and secure.</p>
           <div className="max-w-[680px] mx-auto flex gap-2">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !loading && send()}
-              placeholder="Type your response…"
-              className="flex-1"
-              disabled={loading}
-            />
+            <Input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && !loading && send()} placeholder="Type your response…" className="flex-1" disabled={loading} />
             <Button onClick={send} size="icon" disabled={loading || !input.trim()}>
               <Send className="h-4 w-4" />
             </Button>
