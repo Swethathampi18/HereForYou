@@ -9,6 +9,7 @@ import { PageTransition } from "@/components/PageTransition";
 import { Heart, AlertCircle, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { getRoleRedirect } from "@/components/RoleGuard";
 
 const SignUp = () => {
   const [name, setName] = useState("");
@@ -45,8 +46,8 @@ const SignUp = () => {
         language,
         ...(isMinor && guardianEmail ? { guardian_email: guardianEmail } : {}),
       });
-      toast({ title: "Account created! Check your email to confirm." });
-      navigate("/dashboard");
+      toast({ title: "Account created! You can now sign in." });
+      navigate(getRoleRedirect(role));
     } catch (err: any) {
       toast({ title: err.message || "Sign up failed", variant: "destructive" });
     } finally {
@@ -64,10 +65,8 @@ const SignUp = () => {
               <span className="text-xl font-bold text-primary">HereForYou</span>
             </Link>
           </div>
-
           <div className="bg-card rounded-xl shadow-sm border p-8">
             <h1 className="text-2xl font-bold text-foreground mb-6">Create your account</h1>
-
             <div className="space-y-4">
               <div>
                 <Label htmlFor="name">Full Name</Label>
@@ -100,7 +99,6 @@ const SignUp = () => {
                   </Select>
                 </div>
               </div>
-
               <div>
                 <Label>Role</Label>
                 <Select value={role} onValueChange={setRole}>
@@ -112,7 +110,6 @@ const SignUp = () => {
                   </SelectContent>
                 </Select>
               </div>
-
               {isMinor && (
                 <div className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/30">
                   <AlertCircle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
@@ -123,7 +120,6 @@ const SignUp = () => {
                   </div>
                 </div>
               )}
-
               <div className="flex items-center gap-2 pt-1">
                 <Checkbox id="terms" checked={agreed} onCheckedChange={(v) => setAgreed(!!v)} />
                 <Label htmlFor="terms" className="text-sm text-muted-foreground font-normal cursor-pointer">
@@ -131,13 +127,11 @@ const SignUp = () => {
                   <a href="#" className="text-primary hover:underline">Privacy Policy</a>
                 </Label>
               </div>
-
               <Button className="w-full mt-2" size="lg" onClick={handleSubmit} disabled={submitting}>
                 {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                 Create Account
               </Button>
             </div>
-
             <p className="text-center text-sm text-muted-foreground mt-6">
               Already have an account?{" "}
               <Link to="/signin" className="text-primary hover:underline font-medium">Sign In</Link>
