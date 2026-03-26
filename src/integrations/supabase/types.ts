@@ -273,6 +273,36 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_reports: {
+        Row: {
+          generated_at: string | null
+          id: string
+          intake_session_id: string | null
+          report_markdown: string | null
+          sent_at: string | null
+          sent_to_therapist_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          generated_at?: string | null
+          id?: string
+          intake_session_id?: string | null
+          report_markdown?: string | null
+          sent_at?: string | null
+          sent_to_therapist_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          generated_at?: string | null
+          id?: string
+          intake_session_id?: string | null
+          report_markdown?: string | null
+          sent_at?: string | null
+          sent_to_therapist_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           age: number | null
@@ -389,42 +419,93 @@ export type Database = {
           },
         ]
       }
+      therapists: {
+        Row: {
+          accepting_patients: boolean | null
+          available_slots: Json | null
+          bio: string | null
+          city: string | null
+          clinic_address: string | null
+          clinic_name: string | null
+          credentials: string | null
+          id: string
+          specialty: string | null
+        }
+        Insert: {
+          accepting_patients?: boolean | null
+          available_slots?: Json | null
+          bio?: string | null
+          city?: string | null
+          clinic_address?: string | null
+          clinic_name?: string | null
+          credentials?: string | null
+          id: string
+          specialty?: string | null
+        }
+        Update: {
+          accepting_patients?: boolean | null
+          available_slots?: Json | null
+          bio?: string | null
+          city?: string | null
+          clinic_address?: string | null
+          clinic_name?: string | null
+          credentials?: string | null
+          id?: string
+          specialty?: string | null
+        }
+        Relationships: []
+      }
       therapy_groups: {
         Row: {
+          condition_focus: string | null
           created_at: string
           current_count: number | null
+          description: string | null
           id: string
           is_active: boolean | null
+          location: string | null
           max_capacity: number | null
           name: string
           schedule_json: Json | null
+          session_duration_minutes: number | null
           severity_range: Database["public"]["Enums"]["severity_level"] | null
           therapist_id: string | null
           type: Database["public"]["Enums"]["group_type"]
+          what_to_expect: string | null
         }
         Insert: {
+          condition_focus?: string | null
           created_at?: string
           current_count?: number | null
+          description?: string | null
           id?: string
           is_active?: boolean | null
+          location?: string | null
           max_capacity?: number | null
           name: string
           schedule_json?: Json | null
+          session_duration_minutes?: number | null
           severity_range?: Database["public"]["Enums"]["severity_level"] | null
           therapist_id?: string | null
           type: Database["public"]["Enums"]["group_type"]
+          what_to_expect?: string | null
         }
         Update: {
+          condition_focus?: string | null
           created_at?: string
           current_count?: number | null
+          description?: string | null
           id?: string
           is_active?: boolean | null
+          location?: string | null
           max_capacity?: number | null
           name?: string
           schedule_json?: Json | null
+          session_duration_minutes?: number | null
           severity_range?: Database["public"]["Enums"]["severity_level"] | null
           therapist_id?: string | null
           type?: Database["public"]["Enums"]["group_type"]
+          what_to_expect?: string | null
         }
         Relationships: []
       }
