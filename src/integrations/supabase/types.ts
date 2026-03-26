@@ -243,6 +243,36 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          recipient_id: string
+          sender_id: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean
+          recipient_id: string
+          sender_id?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          recipient_id?: string
+          sender_id?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           age: number | null
@@ -273,6 +303,42 @@ export type Database = {
         }
         Relationships: []
       }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          patient_id: string
+          reason: string
+          referred_to: string
+          referring_therapist_id: string
+          specialty: string | null
+          status: string
+          urgency: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          patient_id: string
+          reason: string
+          referred_to: string
+          referring_therapist_id: string
+          specialty?: string | null
+          status?: string
+          urgency?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          patient_id?: string
+          reason?: string
+          referred_to?: string
+          referring_therapist_id?: string
+          specialty?: string | null
+          status?: string
+          urgency?: string
+        }
+        Relationships: []
+      }
       sessions_log: {
         Row: {
           claims_status: Database["public"]["Enums"]["claims_status"] | null
@@ -283,6 +349,7 @@ export type Database = {
           mismatch_reason: string | null
           notes_text: string | null
           session_date: string
+          status: string
           therapist_id: string | null
           user_id: string
         }
@@ -295,6 +362,7 @@ export type Database = {
           mismatch_reason?: string | null
           notes_text?: string | null
           session_date?: string
+          status?: string
           therapist_id?: string | null
           user_id: string
         }
@@ -307,6 +375,7 @@ export type Database = {
           mismatch_reason?: string | null
           notes_text?: string | null
           session_date?: string
+          status?: string
           therapist_id?: string | null
           user_id?: string
         }
