@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "@/hooks/useAuth";
+import { RoleGuard } from "@/components/RoleGuard";
 import Landing from "./pages/Landing";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
@@ -32,14 +33,31 @@ const App = () => (
               <Route path="/" element={<Landing />} />
               <Route path="/signup" element={<SignUp />} />
               <Route path="/signin" element={<SignIn />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/intake" element={<IntakeChat />} />
-              <Route path="/results" element={<IntakeResults />} />
-              <Route path="/match" element={<MatchPage />} />
-              <Route path="/progress" element={<ProgressPage />} />
-              <Route path="/therapist" element={<TherapistDashboard />} />
-              <Route path="/supervisor" element={<SupervisorPanel />} />
-              <Route path="/guardian" element={<GuardianPortal />} />
+
+              {/* Legacy redirect */}
+              <Route path="/dashboard" element={<Navigate to="/dashboard/patient" replace />} />
+
+              {/* Role-protected routes */}
+              <Route path="/dashboard/patient" element={<RoleGuard allowedRoles={["patient"]}><Dashboard /></RoleGuard>} />
+              <Route path="/dashboard/therapist" element={<RoleGuard allowedRoles={["therapist"]}><TherapistDashboard /></RoleGuard>} />
+              <Route path="/dashboard/guardian" element={<RoleGuard allowedRoles={["guardian"]}><GuardianPortal /></RoleGuard>} />
+              <Route path="/dashboard/supervisor" element={<RoleGuard allowedRoles={["supervisor"]}><SupervisorPanel /></RoleGuard>} />
+              <Route path="/dashboard/admin" element={<RoleGuard allowedRoles={["admin"]}><SupervisorPanel /></RoleGuard>} />
+
+              {/* Patient routes */}
+              <Route path="/intake" element={<RoleGuard allowedRoles={["patient", "guardian"]}><IntakeChat /></RoleGuard>} />
+              <Route path="/results" element={<RoleGuard allowedRoles={["patient", "guardian"]}><IntakeResults /></RoleGuard>} />
+              <Route path="/match" element={<RoleGuard allowedRoles={["patient"]}><MatchPage /></RoleGuard>} />
+              <Route path="/progress" element={<RoleGuard allowedRoles={["patient"]}><ProgressPage /></RoleGuard>} />
+
+              {/* Therapist sub-routes */}
+              <Route path="/therapist/notes" element={<RoleGuard allowedRoles={["therapist"]}><TherapistDashboard /></RoleGuard>} />
+              <Route path="/therapist/claims" element={<RoleGuard allowedRoles={["therapist"]}><TherapistDashboard /></RoleGuard>} />
+
+              {/* Supervisor sub-routes */}
+              <Route path="/supervisor" element={<RoleGuard allowedRoles={["supervisor", "admin"]}><SupervisorPanel /></RoleGuard>} />
+              <Route path="/supervisor/*" element={<RoleGuard allowedRoles={["supervisor", "admin"]}><SupervisorPanel /></RoleGuard>} />
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AnimatePresence>

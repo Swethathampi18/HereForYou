@@ -7,6 +7,7 @@ import { PageTransition } from "@/components/PageTransition";
 import { Heart, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { getRoleRedirect } from "@/components/RoleGuard";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
@@ -24,7 +25,14 @@ const SignIn = () => {
     setSubmitting(true);
     try {
       await signIn(email, password);
-      navigate("/dashboard");
+      // The auth state change will trigger role fetch, but we need to wait for it
+      // Use a small delay to let the auth state settle, then redirect
+      const { data } = await (await import("@/integrations/supabase/client")).supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", (await (await import("@/integrations/supabase/client")).supabase.auth.getUser()).data.user?.id || "")
+        .single();
+      navigate(getRoleRedirect(data?.role || "patient"));
     } catch (err: any) {
       toast({ title: err.message || "Sign in failed", variant: "destructive" });
     } finally {
@@ -42,10 +50,8 @@ const SignIn = () => {
               <span className="text-xl font-bold text-primary">HereForYou</span>
             </Link>
           </div>
-
           <div className="bg-card rounded-xl shadow-sm border p-8">
             <h1 className="text-2xl font-bold text-foreground mb-6">Welcome back</h1>
-
             <div className="space-y-4">
               <div>
                 <Label htmlFor="email">Email</Label>
@@ -63,7 +69,6 @@ const SignIn = () => {
                 Sign In
               </Button>
             </div>
-
             <p className="text-center text-sm text-muted-foreground mt-6">
               New here?{" "}
               <Link to="/signup" className="text-primary hover:underline font-medium">Get Started</Link>
