@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Heart, Home, MessageCircle, Users, TrendingUp, Smile, Settings, LogOut } from "lucide-react";
+import { Heart, Home, MessageCircle, Users, TrendingUp, Smile, FileText, Clock, Settings, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Separator } from "@/components/ui/separator";
@@ -9,7 +9,8 @@ const patientNav = [
   { label: "My Intake", icon: MessageCircle, to: "/intake" },
   { label: "My Match", icon: Users, to: "/match" },
   { label: "Progress", icon: TrendingUp, to: "/progress" },
-  { label: "Mood Check-in", icon: Smile, to: "/dashboard/patient" },
+  { label: "Reports", icon: FileText, to: "/dashboard/patient/reports" },
+  { label: "Appointment History", icon: Clock, to: "/dashboard/patient/appointment-history" },
   { label: "Settings", icon: Settings, to: "/dashboard/patient/settings" },
 ];
 

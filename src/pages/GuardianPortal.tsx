@@ -113,7 +113,7 @@ const GuardianDashboardMain = () => {
       ]);
       setIntakeStatus(intake?.status || null);
       setMatchInfo(match ? (match.match_rationale || match.match_type) : null);
-      setSessionsCount(sess.data?.length || 0);
+      setSessionsCount(sess?.length || 0);
       setLoading(false);
     };
     fetch();
