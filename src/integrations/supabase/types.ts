@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointment_history: {
+        Row: {
+          action: string | null
+          actioned_at: string | null
+          actioned_by: string | null
+          id: string
+          new_date: string | null
+          original_date: string | null
+          original_session_id: string | null
+          reason: string | null
+          therapist_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action?: string | null
+          actioned_at?: string | null
+          actioned_by?: string | null
+          id?: string
+          new_date?: string | null
+          original_date?: string | null
+          original_session_id?: string | null
+          reason?: string | null
+          therapist_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string | null
+          actioned_at?: string | null
+          actioned_by?: string | null
+          id?: string
+          new_date?: string | null
+          original_date?: string | null
+          original_session_id?: string | null
+          reason?: string | null
+          therapist_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -418,6 +457,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      therapist_reports: {
+        Row: {
+          created_at: string | null
+          id: string
+          patient_id: string | null
+          report_markdown: string | null
+          sent_at: string | null
+          sent_to_guardian: boolean | null
+          sent_to_patient: boolean | null
+          session_id: string | null
+          therapist_id: string | null
+          title: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          patient_id?: string | null
+          report_markdown?: string | null
+          sent_at?: string | null
+          sent_to_guardian?: boolean | null
+          sent_to_patient?: boolean | null
+          session_id?: string | null
+          therapist_id?: string | null
+          title?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          patient_id?: string | null
+          report_markdown?: string | null
+          sent_at?: string | null
+          sent_to_guardian?: boolean | null
+          sent_to_patient?: boolean | null
+          session_id?: string | null
+          therapist_id?: string | null
+          title?: string | null
+        }
+        Relationships: []
       }
       therapists: {
         Row: {
