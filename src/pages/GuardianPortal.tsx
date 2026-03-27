@@ -109,11 +109,11 @@ const GuardianDashboardMain = () => {
       const [{ data: intake }, { data: match }, { data: sess }] = await Promise.all([
         supabase.from("intake_sessions").select("status, severity_level").eq("user_id", childId).order("created_at", { ascending: false }).limit(1).single(),
         supabase.from("matches").select("match_type, match_rationale").eq("user_id", childId).limit(1).single(),
-        supabase.from("sessions_log").select("id", { count: "exact", head: true }).eq("user_id", childId),
+        supabase.from("sessions_log").select("id").eq("user_id", childId),
       ]);
       setIntakeStatus(intake?.status || null);
       setMatchInfo(match ? (match.match_rationale || match.match_type) : null);
-      setSessionsCount(sess.count || 0);
+      setSessionsCount(sess.data?.length || 0);
       setLoading(false);
     };
     fetch();
