@@ -344,30 +344,51 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           age: number | null
+          city: string | null
+          country: string | null
           created_at: string
           email: string | null
           full_name: string | null
+          gender: string | null
+          guardian_relation: string | null
           id: string
           language: string | null
+          phone: string | null
+          pincode: string | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
           age?: number | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
+          gender?: string | null
+          guardian_relation?: string | null
           id: string
           language?: string | null
+          phone?: string | null
+          pincode?: string | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
           age?: number | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
+          gender?: string | null
+          guardian_relation?: string | null
           id?: string
           language?: string | null
+          phone?: string | null
+          pincode?: string | null
           updated_at?: string
         }
         Relationships: []
