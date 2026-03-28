@@ -24,6 +24,7 @@ const nav = [
   { label: "My Groups", icon: Users, to: "/dashboard/therapist/groups" },
   { label: "Schedule", icon: CalendarDays, to: "/dashboard/therapist/schedule" },
   { label: "Session Notes", icon: ClipboardList, to: "/dashboard/therapist/notes" },
+  { label: "Patient Reports", icon: Eye, to: "/dashboard/therapist/patient-reports" },
   { label: "Referrals", icon: ArrowRightCircle, to: "/dashboard/therapist/referrals" },
   { label: "Settings", icon: Settings, to: "/dashboard/therapist/settings" },
 ];
@@ -166,11 +167,14 @@ const TherapistDashboard = () => {
   const submitSchedule = async () => {
     if (!user || !schedPatientId || !schedDate || !schedTime) return;
     setSubmittingSched(true);
-    const sessionDate = new Date(`${schedDate}T${schedTime}`);
-    const { error } = await supabase.from("sessions_log").insert({ user_id: schedPatientId, therapist_id: user.id, session_date: sessionDate.toISOString(), notes_text: schedNotes || "", claims_status: "pending" as const });
+    const [yr, mo, dy] = schedDate.split('-').map(Number);
+    const [hr, mn] = schedTime.split(':').map(Number);
+    const sessionDate = new Date(yr, mo - 1, dy, hr, mn);
+    const sessionDateISO = sessionDate.toISOString();
+    const { error } = await supabase.from("sessions_log").insert({ user_id: schedPatientId, therapist_id: user.id, session_date: sessionDateISO, notes_text: schedNotes || "", claims_status: "pending" as const });
     if (error) { toast({ title: error.message, variant: "destructive" }); }
     else {
-      await supabase.from("notifications").insert({ recipient_id: schedPatientId, sender_id: user.id, type: "appointment", message: `New appointment scheduled for ${sessionDate.toLocaleDateString()}` } as any);
+      await supabase.from("notifications").insert({ recipient_id: schedPatientId, sender_id: user.id, type: "appointment", message: `New appointment scheduled for ${sessionDate.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}` } as any);
       toast({ title: "Appointment scheduled!" });
       setScheduleModalOpen(false);
       fetchAll();
