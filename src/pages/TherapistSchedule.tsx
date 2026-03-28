@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { scheduleAppointment, formatDisplayDate, formatDisplayTime } from "@/lib/dateUtils";
 
 const TherapistSchedule = () => {
   const { user } = useAuth();
@@ -22,9 +23,7 @@ const TherapistSchedule = () => {
   const [sessions, setSessions] = useState<any[]>([]);
   const [patients, setPatients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"month" | "week">("month");
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [schedOpen, setSchedOpen] = useState(false);
   const [schedDate, setSchedDate] = useState("");
   const [schedTime, setSchedTime] = useState("");
@@ -34,6 +33,18 @@ const TherapistSchedule = () => {
 
   useEffect(() => { if (user) fetchData(); }, [user]);
 
+  // Realtime subscription
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel("therapist-schedule")
+      .on("postgres_changes", { event: "*", schema: "public", table: "sessions_log", filter: `therapist_id=eq.${user.id}` }, () => {
+        fetchData();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
   const fetchData = async () => {
     if (!user) return;
     setLoading(true);
@@ -42,8 +53,6 @@ const TherapistSchedule = () => {
       supabase.from("matches").select("user_id").eq("therapist_id", user.id),
     ]);
     const sess = sessData || [];
-
-    // Get patient names
     const patientIds = [...new Set([...sess.map(s => s.user_id), ...(matchData || []).map(m => m.user_id)])];
     if (patientIds.length > 0) {
       const { data: profiles } = await supabase.from("profiles").select("id, full_name").in("id", patientIds);
@@ -67,25 +76,33 @@ const TherapistSchedule = () => {
   };
 
   const getSessionsForDay = (date: Date) => {
-    const ds = date.toISOString().split("T")[0];
-    return sessions.filter(s => s.session_date.split("T")[0] === ds);
+    const targetDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    return sessions.filter(s => {
+      const sd = new Date(s.session_date);
+      const sessionLocal = `${sd.getFullYear()}-${String(sd.getMonth() + 1).padStart(2, "0")}-${String(sd.getDate()).padStart(2, "0")}`;
+      return sessionLocal === targetDate;
+    });
   };
 
   const updateStatus = async (sessionId: string, status: string) => {
     await supabase.from("sessions_log").update({ status } as any).eq("id", sessionId);
     toast({ title: `Session marked as ${status}` });
-    setSelectedEvent(null);
     fetchData();
   };
 
   const submitSchedule = async () => {
     if (!user || !schedPatient || !schedDate || !schedTime) return;
     setSubmitting(true);
-    const dt = new Date(`${schedDate}T${schedTime}`);
-    const { error } = await supabase.from("sessions_log").insert({ user_id: schedPatient, therapist_id: user.id, session_date: dt.toISOString(), notes_text: schedNotes, claims_status: "pending" as const, status: "pending" });
+    const sessionDateISO = scheduleAppointment(schedDate, schedTime);
+    const { error } = await supabase.from("sessions_log").insert({
+      user_id: schedPatient, therapist_id: user.id, session_date: sessionDateISO, notes_text: schedNotes, claims_status: "pending" as const, status: "pending",
+    });
     if (error) { toast({ title: error.message, variant: "destructive" }); }
     else {
-      await supabase.from("notifications").insert({ recipient_id: schedPatient, sender_id: user.id, type: "appointment", message: `New appointment on ${dt.toLocaleDateString()}` } as any);
+      await supabase.from("notifications").insert({
+        recipient_id: schedPatient, sender_id: user.id, type: "appointment",
+        message: `New appointment on ${formatDisplayDate(sessionDateISO)} at ${formatDisplayTime(sessionDateISO)}`,
+      } as any);
       toast({ title: "Appointment scheduled!" });
       setSchedOpen(false);
       fetchData();
@@ -94,7 +111,7 @@ const TherapistSchedule = () => {
   };
 
   const days = getDaysInMonth(currentDate);
-  const monthLabel = currentDate.toLocaleDateString("en", { month: "long", year: "numeric" });
+  const monthLabel = currentDate.toLocaleDateString("en-IN", { month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -127,22 +144,30 @@ const TherapistSchedule = () => {
                     const isCurrentMonth = day.getMonth() === currentDate.getMonth();
                     const daySessions = getSessionsForDay(day);
                     const isToday = day.toDateString() === new Date().toDateString();
+                    const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
                     return (
                       <div key={i} className={cn("min-h-[80px] border-b border-r p-1 cursor-pointer hover:bg-muted/30", !isCurrentMonth && "opacity-40")}
-                        onClick={() => { setSchedDate(day.toISOString().split("T")[0]); setSchedOpen(true); }}>
+                        onClick={() => { setSchedDate(dateStr); setSchedOpen(true); }}>
                         <p className={cn("text-xs font-medium mb-1", isToday && "text-primary font-bold")}>{day.getDate()}</p>
                         {daySessions.map(s => (
                           <Popover key={s.id}>
                             <PopoverTrigger asChild>
                               <button onClick={(e) => e.stopPropagation()} className={cn(
                                 "w-full text-left text-[10px] px-1 py-0.5 rounded mb-0.5 truncate",
-                                s.status === "attended" ? "bg-primary/20 text-primary" : s.status === "missed" ? "bg-crisis/20 text-crisis" : "bg-warning/20 text-warning"
+                                s.status === "attended" ? "bg-primary/20 text-primary" :
+                                s.status === "missed" || s.status === "cancelled" ? "bg-destructive/20 text-destructive" :
+                                "bg-warning/20 text-warning"
                               )}>{(s as any).patient_name}</button>
                             </PopoverTrigger>
                             <PopoverContent className="w-56 p-3">
                               <p className="text-sm font-medium text-foreground">{(s as any).patient_name}</p>
-                              <p className="text-xs text-muted-foreground">{new Date(s.session_date).toLocaleString()}</p>
-                              <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full mt-1 capitalize ${s.status === "attended" ? "bg-success/10 text-success" : s.status === "missed" ? "bg-crisis/10 text-crisis" : "bg-warning/10 text-warning"}`}>{s.status}</span>
+                              <p className="text-xs text-muted-foreground">{formatDisplayDate(s.session_date)} · {formatDisplayTime(s.session_date)}</p>
+                              <p className="text-xs text-muted-foreground capitalize">{s.session_type || "individual"}</p>
+                              <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full mt-1 capitalize ${
+                                s.status === "attended" ? "bg-primary/10 text-primary" :
+                                s.status === "missed" ? "bg-destructive/10 text-destructive" :
+                                "bg-warning/10 text-warning"
+                              }`}>{s.status}</span>
                               <div className="flex gap-1 mt-2">
                                 <Button size="sm" variant="outline" className="text-xs" onClick={() => updateStatus(s.id, "attended")}>Attended</Button>
                                 <Button size="sm" variant="outline" className="text-xs" onClick={() => updateStatus(s.id, "missed")}>Missed</Button>
