@@ -439,6 +439,7 @@ export type Database = {
           mismatch_reason: string | null
           notes_text: string | null
           session_date: string
+          session_type: string | null
           status: string
           therapist_id: string | null
           user_id: string
@@ -452,6 +453,7 @@ export type Database = {
           mismatch_reason?: string | null
           notes_text?: string | null
           session_date?: string
+          session_type?: string | null
           status?: string
           therapist_id?: string | null
           user_id: string
@@ -465,6 +467,7 @@ export type Database = {
           mismatch_reason?: string | null
           notes_text?: string | null
           session_date?: string
+          session_type?: string | null
           status?: string
           therapist_id?: string | null
           user_id?: string
