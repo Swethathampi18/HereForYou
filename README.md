@@ -66,22 +66,6 @@ graph LR
     E -->|Accountability| F
 ```
 
-</div>
-
-### 🔑 Key Innovation
-
-| Component | Traditional Therapy | AI-Only Chatbots | **HereForYou AI** ✨ |
-|:----------|:-------------------:|:----------------:|:--------------------:|
-| **Intake** | Manual (slow) | Automated (unsafe) | **AI-Assisted (fast + safe)** |
-| **Severity Assessment** | Subjective | Unreliable | **PHQ-9/GAD-7 Calibrated** |
-| **Crisis Detection** | Delayed | Missed | **<2s Response Time** |
-| **Matching** | Random | Algorithm-only | **AI + Clinical Factors** |
-| **Therapy** | Human-led ✓ | AI-led ✗ | **100% Human-led ✓** |
-| **Oversight** | Limited | None | **Full Clinical Supervision** |
-| **Auditability** | Paper-based | Black box | **Immutable Audit Trail** |
-
----
-
 ## 🏗️ System Architecture
 
 ### **Multi-Agent AI Pipeline (6 Specialized Agents)**
