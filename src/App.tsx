@@ -23,6 +23,7 @@ import TherapistSchedule from "./pages/TherapistSchedule";
 import TherapistNotes from "./pages/TherapistNotes";
 import TherapistReferrals from "./pages/TherapistReferrals";
 import TherapistProfile from "./pages/TherapistProfile";
+import TherapistPatientReports from "./pages/TherapistPatientReports";
 import SupervisorPanel from "./pages/SupervisorPanel";
 import GuardianPortal from "./pages/GuardianPortal";
 import SettingsPage from "./pages/SettingsPage";
@@ -85,6 +86,7 @@ const App = () => (
               <Route path="/dashboard/therapist/groups" element={<RoleGuard allowedRoles={["therapist"]}><TherapistGroups /></RoleGuard>} />
               <Route path="/dashboard/therapist/schedule" element={<RoleGuard allowedRoles={["therapist"]}><TherapistSchedule /></RoleGuard>} />
               <Route path="/dashboard/therapist/notes" element={<RoleGuard allowedRoles={["therapist"]}><TherapistNotes /></RoleGuard>} />
+              <Route path="/dashboard/therapist/patient-reports" element={<RoleGuard allowedRoles={["therapist"]}><TherapistPatientReports /></RoleGuard>} />
               <Route path="/dashboard/therapist/referrals" element={<RoleGuard allowedRoles={["therapist"]}><TherapistReferrals /></RoleGuard>} />
               <Route path="/dashboard/therapist/settings" element={<RoleGuard allowedRoles={["therapist"]}><TherapistSettingsPage /></RoleGuard>} />
 
