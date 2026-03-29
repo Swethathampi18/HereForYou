@@ -220,18 +220,6 @@ AI triage (fast)<br/>
 
 </div>
 
----
-
-## 🔬 Validation Experiments
-
-| Experiment | Metric | Target | Method |
-|:-----------|:-------|:------:|:-------|
-| **Severity Model** | F1 Score | >0.85 | 500 profiles, 3 psychologists vs AI |
-| **Crisis Detection** | Recall | >0.98 | 1,000 labeled messages, human review |
-| **Matching** | Attendance | +20% | A/B test, 500 users, 8 weeks |
-
----
-
 ## 🛡️ Compliance
 
 <div align="center">
