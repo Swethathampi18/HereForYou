@@ -397,7 +397,7 @@ hereforyou-ai/
 
 ---
 
-### 🏆 Built for [Hackathon Name]
+### 🏆 Built for [ET GEN AI HACKATHON]
 
 **Challenge Track:** Healthcare / Mental Health / GenAI Innovation
 
