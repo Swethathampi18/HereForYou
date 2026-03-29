@@ -378,11 +378,8 @@ hereforyou-ai/
 
 <div align="center">
 
-**Project Maintainer:** [Your Name]  
-**Email:** your.email@example.com  
-**Demo Video:** [YouTube Link]  
-**Pitch Deck:** [Slides Link]
-
+**Project Maintainer:** Swetha Thampi  
+**Email:** swethathampim@gmail.com
 ---
 
 ### 🏆 Built for [ET GEN AI HACKATHON]
